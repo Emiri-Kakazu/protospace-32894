@@ -11,5 +11,4 @@ class User < ApplicationRecord
 
   has_many :prototypes, dependent: :destroy
   has_many :comments
-
 end

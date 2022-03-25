@@ -1,9 +1,10 @@
 class PrototypesController < ApplicationController
+  before_action :set_prototype, except: [:index, :new, :create, :destroy]
   before_action :authenticate_user!, only: [:new, :create, :update, :edit, :destroy]
-  
+  before_action :contributor_confirmation, only: [:edit, :update, :destroy]
 
   def index
-    @prototypes = Prototype.all
+    @prototypes = Prototype.includes(:user)
   end
 
   def new
@@ -20,7 +21,6 @@ class PrototypesController < ApplicationController
   end
 
   def show
-    @prototype = Prototype.find(params[:id])
     @comment = Comment.new
     @comments = @prototype.comments
   end
@@ -38,19 +38,20 @@ class PrototypesController < ApplicationController
     #@がついたインスタンス変数ではなく、変数prototypeにしている。
     #しかしProtospaceでは、render :editでフォームとのやり取りを伴うので
     #@がついたインスタンス変数@prototypeにする
-    @prototype = Prototype.find(params[:id])
-    @prototype.update(prototype_params)
-    if @prototype.save
-      redirect_to prototype_path
+    if @prototype.update(prototype_params)
+      redirect_to prototype_path(@prototype)
     else
       render :edit
     end
-  end
+  end 
 
   def destroy
     prototype = Prototype.find(params[:id])
-    prototype.destroy
-    redirect_to root_path
+    if prototype.destroy
+      redirect_to root_path
+    else
+      redirect_to root_path
+    end
   end
 
   private
@@ -58,5 +59,11 @@ class PrototypesController < ApplicationController
     params.require(:prototype).permit(:title, :catch_copy, :concept, :image).merge(user_id: current_user.id)
   end
 
-end
+  def set_prototype
+    @prototype = Prototype.find(params[:id])
+  end
 
+  def contributor_confirmation
+    redirect_to root_path unless current_user == @prototype.user
+  end
+end
